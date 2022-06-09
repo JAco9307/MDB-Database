@@ -8,6 +8,9 @@ enum state {
 	VERIFIED = 2
 };
 
+int GenerateDB(void);
+int FetchPrint(void);
+
 static int callback(void* data, int argc, char** argv, char** azColName)
 {
 	int i;
@@ -21,7 +24,22 @@ static int callback(void* data, int argc, char** argv, char** azColName)
 	return 0;
 }
 
-int main(int argc, char** argv)
+int main(void) {
+	std::cout << "Select mode: (1 = GenerateDB, 2 = Printing, 3 = Error detection) " << std::endl;
+	int Mode;
+	std::cin >> Mode;
+	if (Mode == 1) {
+		GenerateDB();
+	}
+	else if(Mode == 2) {
+		FetchPrint();
+	}
+	else {
+		std::cout << "Not implemented" << std::endl;
+	}
+}
+
+int GenerateDB(void)
 {
 	sqlite3* DB;
 	int exit = 0;
@@ -68,6 +86,43 @@ int main(int argc, char** argv)
 	}
 	std::string query = "SELECT * FROM " + DB_name + ";";
 	std::cout << "20 entries have been added" << std::endl;
+	sqlite3_exec(DB, query.c_str(), callback, NULL, NULL);
+
+	sqlite3_close(DB);
+	return (0);
+}
+
+
+int FetchPrint(void)
+{
+	sqlite3* DB;
+	int exit = 0;
+	exit = sqlite3_open("MDB_DB.db", &DB);
+
+	if (exit) {
+		std::cerr << "Error open DB " << sqlite3_errmsg(DB) << std::endl;
+		return (-1);
+	}
+	else
+		std::cout << "Opened Database Successfully!" << std::endl;
+
+	std::string DB_name = "ExampleDB";
+
+
+	std::cout << "Fetching text to print: " << std::endl;
+
+	std::string sql = "SELECT TEXT, MIN(ID) FROM " + DB_name + " WHERE STATE=0;";
+	char* messaggeError;
+	exit = sqlite3_exec(DB, sql.c_str(), callback, 0, &messaggeError);
+
+	if (exit != SQLITE_OK) {
+		std::cerr << "Error fetch: " << messaggeError << std::endl;
+		sqlite3_free(messaggeError);
+		return (-1);
+	}
+
+
+	std::string query = "SELECT * FROM " + DB_name + ";";
 	sqlite3_exec(DB, query.c_str(), callback, NULL, NULL);
 
 	sqlite3_close(DB);
